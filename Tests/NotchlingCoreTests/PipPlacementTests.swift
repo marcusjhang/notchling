@@ -27,8 +27,8 @@ final class PipPlacementTests: XCTestCase {
         let notch = geometry.notchRect!
         let figure = PipPlacement.figureRect(for: geometry)
 
-        XCTAssertGreaterThanOrEqual(figure.height, 40)
-        XCTAssertLessThanOrEqual(figure.height, 70)
+        XCTAssertGreaterThanOrEqual(figure.height, 24)
+        XCTAssertLessThanOrEqual(figure.height, 44)
         XCTAssertEqual(figure.midX, notch.midX, accuracy: 0.0001)
         XCTAssertEqual(figure.maxY, notch.minY, accuracy: 0.0001)
         XCTAssertLessThan(figure.minY, notch.minY)
@@ -39,8 +39,8 @@ final class PipPlacementTests: XCTestCase {
         let pill = geometry.floatingPillRect
         let figure = PipPlacement.figureRect(for: geometry)
 
-        XCTAssertGreaterThanOrEqual(figure.height, 40)
-        XCTAssertLessThanOrEqual(figure.height, 70)
+        XCTAssertGreaterThanOrEqual(figure.height, 24)
+        XCTAssertLessThanOrEqual(figure.height, 44)
         XCTAssertEqual(figure.midX, pill.midX, accuracy: 0.0001)
         XCTAssertEqual(figure.maxY, pill.minY, accuracy: 0.0001)
         XCTAssertLessThan(figure.minY, pill.minY)
@@ -61,8 +61,8 @@ final class PipPlacementTests: XCTestCase {
     }
 
     func testFigureSizeIsWithinReadableRange() {
-        XCTAssertGreaterThanOrEqual(PipPlacement.figureHeight, 40)
-        XCTAssertLessThanOrEqual(PipPlacement.figureHeight, 70)
+        XCTAssertGreaterThanOrEqual(PipPlacement.figureHeight, 24)
+        XCTAssertLessThanOrEqual(PipPlacement.figureHeight, 44)
         XCTAssertGreaterThan(PipPlacement.figureWidth, 0)
     }
 }

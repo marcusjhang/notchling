@@ -8,7 +8,7 @@ import Foundation
 /// flush with the presentation's bottom edge, extending into the screen
 /// (decreasing y in AppKit's bottom-left origin coordinates).
 public enum PipPlacement {
-    public static let figureHeight: Double = 56
+    public static let figureHeight: Double = 34
     public static let figureAspectRatio: Double = 0.82
 
     public static var figureWidth: Double { figureHeight * figureAspectRatio }
