@@ -121,17 +121,18 @@ public struct ReactionState: Equatable, Sendable {
     @discardableResult
     public mutating func update(
         cursor: Point?,
-        click: Bool,
+        click: Point?,
         figure: Rect,
         at time: TimeInterval
     ) -> ReactionFrame {
         let gaze: Gaze
         let near: Bool
         let hovering: Bool
+        let hoverRegion = figure.expanded(by: ReactionTuning.hoverPadding)
         if let cursor {
             gaze = Gaze.toward(center: figure.center, target: cursor)
             near = figure.expanded(by: ReactionTuning.proximityPadding).contains(cursor)
-            hovering = figure.expanded(by: ReactionTuning.hoverPadding).contains(cursor)
+            hovering = hoverRegion.contains(cursor)
         } else {
             gaze = .zero
             near = false
@@ -158,7 +159,7 @@ public struct ReactionState: Equatable, Sendable {
             emerge = 0
         }
 
-        if click {
+        if let click, hoverRegion.contains(click) {
             clickTime = time
             clickCount += 1
         }

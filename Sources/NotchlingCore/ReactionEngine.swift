@@ -1,12 +1,13 @@
 import Foundation
 
-/// One read of the pointer state. `click` is an edge: a source reports it once
-/// and the consumer's read clears it.
+/// One read of the pointer state. A non-nil `click` is an edge carrying the
+/// click location: a source reports it once and the consumer's read clears it.
+/// Whether the click counts is decided in `NotchlingCore` from that location.
 public struct PipInput: Equatable, Sendable {
     public var cursor: Point?
-    public var click: Bool
+    public var click: Point?
 
-    public init(cursor: Point? = nil, click: Bool = false) {
+    public init(cursor: Point? = nil, click: Point? = nil) {
         self.cursor = cursor
         self.click = click
     }

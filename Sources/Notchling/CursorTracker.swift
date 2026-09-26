@@ -11,7 +11,7 @@ import NotchlingCore
 final class CursorTracker: PipInputSource, @unchecked Sendable {
     private let lock = NSLock()
     private var cursor: Point?
-    private var pendingClick = false
+    private var pendingClick: Point?
     private var monitors: [Any] = []
 
     init() {
@@ -30,17 +30,18 @@ final class CursorTracker: PipInputSource, @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         let click = pendingClick
-        pendingClick = false
+        pendingClick = nil
         return PipInput(cursor: cursor, click: click)
     }
 
     private func handle(_ event: NSEvent) {
         let location = NSEvent.mouseLocation
+        let point = Point(x: Double(location.x), y: Double(location.y))
         lock.lock()
         defer { lock.unlock() }
-        cursor = Point(x: Double(location.x), y: Double(location.y))
+        cursor = point
         if event.type == .leftMouseDown {
-            pendingClick = true
+            pendingClick = point
         }
     }
 }
