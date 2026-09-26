@@ -26,7 +26,7 @@ final class PanelController {
         panel.isReleasedWhenClosed = false
         panel.ignoresMouseEvents = true
         panel.contentView = NSHostingView(
-            rootView: PipPlaceholderView(target: Self.viewRect(for: geometry.presentation.rect, in: stage))
+            rootView: PipView(target: Self.viewRect(for: PipPlacement.figureRect(for: geometry), in: stage))
         )
     }
 
