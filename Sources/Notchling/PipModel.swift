@@ -13,21 +13,44 @@ final class PipModel {
 
     private var engine: ReactionEngine
     private var active: (behavior: Behavior, time: TimeInterval)?
+    private var lastGaze: Gaze = .zero
 
-    init(figure: Rect) {
-        let tracker = CursorTracker()
-        let system = SystemStateMonitor()
+    /// True while something is worth animating at the fast cadence: a live
+    /// reaction, a micro-behavior mid-flight, cursor movement, or hover-emerge.
+    private(set) var isEngaged = false
+
+    init(
+        figure: Rect,
+        personality: Personality,
+        source: (any PipInputSource)?,
+        systemSource: (any SystemStateSource)?
+    ) {
         engine = ReactionEngine(
             seed: 0x4E4F_5443,
-            personality: .companion,
+            personality: personality,
             figure: figure,
-            source: tracker,
-            systemSource: system,
+            source: source,
+            systemSource: systemSource,
             clock: SystemClock()
         )
     }
 
-    func tick() -> PipPose {
+    /// True once the ambient arc has fully reached sleep. Drives animation
+    /// gating in the app layer.
+    var isAsleep: Bool { engine.mood.isAsleep }
+
+    var mood: Mood { engine.mood }
+
+    /// Wake Pip out of doze or nap. Called when the app resumes after muting or
+    /// display sleep so animation starts from a lively state.
+    func wake() {
+        _ = engine.wake()
+    }
+
+    func tick(personality: Personality) -> PipPose {
+        if engine.behavior.personality != personality {
+            engine.behavior.personality = personality
+        }
         let emission = engine.step()
         let time = emission.time
 
@@ -54,13 +77,20 @@ final class PipModel {
         pose.nightcap = emission.isNightcap ? 1 : 0
         pose.perky = emission.isMorning ? 1 : 0
 
-        if let micro = emission.microEvents.last {
+        if !emission.mood.isAsleep, let micro = emission.microEvents.last {
             active = (micro.behavior, micro.time)
         }
+        var microActive = false
         if let active, time - active.time < Self.behaviorDuration {
+            microActive = true
             let progress = max(0, min(1, (time - active.time) / Self.behaviorDuration))
             apply(active.behavior, CGFloat(sin(progress * .pi)), to: &pose)
         }
+
+        let pointerMoved = emission.gaze != lastGaze
+        lastGaze = emission.gaze
+        isEngaged = !emission.mood.isAsleep
+            && (emission.isReactive || microActive || pointerMoved || emission.emerge > 0)
 
         return pose
     }
@@ -80,6 +110,13 @@ final class PipModel {
 
 /// A single frame's worth of animation values for Pip.
 struct PipPose: Equatable {
+    /// A neutral, non-animated pose used while mute or display sleep has paused
+    /// drawing.
+    static let resting = PipPose()
+    /// A still, fully-drooped pose drawn while Pip naps. The engine keeps
+    /// polling at a slow cadence, but nothing visibly moves.
+    static let napping = PipPose(droop: 1)
+
     var squash: CGFloat = 0
     var blink: CGFloat = 0
     var look: CGFloat = 0

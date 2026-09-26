@@ -117,6 +117,14 @@ public struct ReactionEngine {
         TimeOfDay(date: Date(timeIntervalSinceReferenceDate: clock.now), calendar: calendar)
     }
 
+    /// Force a wake interrupt without a pointer or system trigger. Used when the
+    /// app resumes after muting or display sleep, so Pip does not come back
+    /// straight into doze/nap.
+    @discardableResult
+    public mutating func wake() -> Emission {
+        behavior.activity()
+    }
+
     @discardableResult
     public mutating func step() -> ReactionEmission {
         step(input: source?.readInput() ?? .idle, system: systemSource?.readSystemState() ?? .idle)

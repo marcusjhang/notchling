@@ -44,6 +44,18 @@ frameworks.
 - Test: `swift test`
 - Full deterministic check: `bash scripts/check.sh`
 - Probe geometry headlessly: `swift run NotchlingProbe`
+- Package the app: `bash scripts/package.sh` (writes `dist/Notchling.app`)
+- Run the packaged app: `open dist/Notchling.app`
+
+## Packaging and settings
+
+`scripts/package.sh` builds `dist/Notchling.app`: an `LSUIElement` (menu-bar-only)
+bundle with the creature icon and an ad-hoc signature, so it opens with one
+menu-bar item, no Dock icon, and no ordinary window. Personality, Mute, and
+Launch at Login are stored in `UserDefaults` under `com.notchling.pip.*` and
+restored on the next launch. Pip prefers a notched display and falls back to a
+floating pill, rebuilding a single panel when displays change and pausing
+animation while muted, napping, or the display is asleep or locked.
 
 ## Hard rules
 

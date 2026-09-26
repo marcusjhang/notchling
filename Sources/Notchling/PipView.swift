@@ -2,39 +2,26 @@ import SwiftUI
 import NotchlingCore
 
 /// Pip, drawn entirely from vector custom Shapes and anchored at `target`
-/// (the figure rectangle in view coordinates). A single `TimelineView` ticks
-/// the `PipModel`, which reads cursor/click input through the input protocol,
-/// steps the `ReactionEngine`, and returns a pose; one shared spring smooths
-/// the discrete behavior targets. `figure` is the same rect in screen
-/// coordinates, which is the space the global cursor monitor reports in.
+/// (the figure rectangle in view coordinates). `PipAnimator` owns the engine
+/// clock and pauses it while muted, napping, or the display is asleep; one
+/// shared spring smooths the discrete behavior targets.
 @MainActor
 struct PipView: View {
     let target: CGRect
-    let figure: Rect
-    @State private var model: PipModel
-
-    init(target: CGRect, figure: Rect) {
-        self.target = target
-        self.figure = figure
-        _model = State(initialValue: PipModel(figure: figure))
-    }
+    let animator: PipAnimator
 
     var body: some View {
-        GeometryReader { _ in
-            TimelineView(.animation) { _ in
-                let pose = model.tick()
-                PipFigure(pose: pose)
-                    .frame(width: target.width, height: target.height)
-                    .rotationEffect(
-                        .degrees(Double(pose.gazeX) * 3 + Double(pose.musicSway) * 4),
-                        anchor: .top
-                    )
-                    .offset(y: pose.emerge + pose.perk * 2 - pose.perky * 1.5 + pose.snuggle * 3)
-                    .scaleEffect(1 - pose.snuggle * 0.05, anchor: .bottom)
-                    .position(x: target.midX, y: target.midY)
-                    .animation(PipModel.sharedSpring, value: pose.springKey)
-            }
-        }
+        let pose = animator.pose
+        PipFigure(pose: pose)
+            .frame(width: target.width, height: target.height)
+            .rotationEffect(
+                .degrees(Double(pose.gazeX) * 3 + Double(pose.musicSway) * 4),
+                anchor: .top
+            )
+            .offset(y: pose.emerge + pose.perk * 2 - pose.perky * 1.5 + pose.snuggle * 3)
+            .scaleEffect(1 - pose.snuggle * 0.05, anchor: .bottom)
+            .position(x: target.midX, y: target.midY)
+            .animation(PipModel.sharedSpring, value: pose.springKey)
     }
 }
 

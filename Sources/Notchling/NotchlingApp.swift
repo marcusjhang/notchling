@@ -1,22 +1,25 @@
 import AppKit
-import NotchlingCore
 
 @main
 @MainActor
-struct NotchlingApp {
+final class NotchlingApp: NSObject, NSApplicationDelegate {
+    private var controller: AppController?
+
     static func main() {
         let app = NSApplication.shared
+        let delegate = NotchlingApp()
+        app.delegate = delegate
         app.setActivationPolicy(.accessory)
-
-        let screens = NSScreen.screens
-        let geometries = screens.map { ScreenGeometry(screen: $0) }
-        guard let selected = DisplaySelection.preferred(from: geometries) else {
-            return
-        }
-        let screen = screens[geometries.firstIndex(of: selected) ?? 0]
-
-        let controller = PanelController(screen: screen)
-        controller.show()
         app.run()
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let controller = AppController()
+        self.controller = controller
+        controller.start()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        controller?.stop()
     }
 }
