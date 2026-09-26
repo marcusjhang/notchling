@@ -7,6 +7,8 @@ enum PipPalette {
     static let eye = Color(red: 0.169, green: 0.165, blue: 0.157)
     static let catchlight = Color.white
     static let innerEar = Color(red: 0.949, green: 0.663, blue: 0.627)
+    static let warmGlow = Color(red: 1.0, green: 0.78, blue: 0.42)
+    static let nightcap = Color(red: 0.557, green: 0.608, blue: 0.682)
 }
 
 /// Normalized part rectangles for the Pip figure, derived from the figure's
@@ -122,6 +124,28 @@ struct PipTuftShape: Shape {
         path.addQuadCurve(
             to: CGPoint(x: rect.maxX, y: rect.maxY),
             control: CGPoint(x: rect.midX, y: rect.minY - rect.height * 0.5)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX, y: rect.maxY),
+            control: CGPoint(x: rect.midX, y: rect.midY)
+        )
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// A droopy nightcap that sits on Pip's crown when it is late.
+struct PipNightcapShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX, y: rect.maxY),
+            control: CGPoint(x: rect.midX, y: rect.minY - rect.height * 0.35)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: rect.midX, y: rect.maxY),
+            control: CGPoint(x: rect.midX, y: rect.midY)
         )
         path.addQuadCurve(
             to: CGPoint(x: rect.minX, y: rect.maxY),
