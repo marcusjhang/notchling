@@ -41,4 +41,18 @@ public struct Rect: Equatable, Sendable {
     public var maxY: Double { origin.y + size.height }
     public var midX: Double { origin.x + size.width / 2 }
     public var midY: Double { origin.y + size.height / 2 }
+    public var center: Point { Point(x: midX, y: midY) }
+
+    public func contains(_ point: Point) -> Bool {
+        point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY
+    }
+
+    public func expanded(by amount: Double) -> Rect {
+        Rect(
+            x: minX - amount,
+            y: minY - amount,
+            width: width + amount * 2,
+            height: height + amount * 2
+        )
+    }
 }

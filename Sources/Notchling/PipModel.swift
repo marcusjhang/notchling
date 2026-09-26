@@ -1,19 +1,28 @@
 import SwiftUI
 import NotchlingCore
 
-/// Drives the creature from the behavior engine. One shared spring smooths the
-/// discrete behavior targets; breathing is a continuous baseline that runs in
-/// every mood.
+/// Drives the creature from the reactive behavior engine. One shared spring
+/// smooths the discrete behavior targets; breathing is a continuous baseline
+/// that runs in every mood. Cursor tracking flows through the injected input
+/// source, so the decision logic stays entirely in `NotchlingCore`.
+@MainActor
 final class PipModel {
     static let sharedSpring = Animation.spring(response: 0.45, dampingFraction: 0.72)
     static let breathingPeriod: Double = 2.5
     static let behaviorDuration: TimeInterval = 0.7
 
-    private var engine: BehaviorEngine
+    private var engine: ReactionEngine
     private var active: (behavior: Behavior, time: TimeInterval)?
 
-    init(personality: Personality = .companion) {
-        engine = BehaviorEngine(seed: 0x4E4F_5443, personality: personality, clock: SystemClock())
+    init(figure: Rect) {
+        let tracker = CursorTracker()
+        engine = ReactionEngine(
+            seed: 0x4E4F_5443,
+            personality: .companion,
+            figure: figure,
+            source: tracker,
+            clock: SystemClock()
+        )
     }
 
     func tick() -> PipPose {
@@ -29,6 +38,12 @@ final class PipModel {
         case .doze: pose.droop = 0.55
         case .nap: pose.droop = 1
         }
+
+        pose.gazeX = CGFloat(emission.gaze.x)
+        pose.gazeY = CGFloat(emission.gaze.y)
+        pose.emerge = CGFloat(emission.emerge)
+        pose.bounce = CGFloat(emission.bounce)
+        pose.perk = emission.isNear ? 1 : 0
 
         if let micro = emission.microEvents.last {
             active = (micro.behavior, micro.time)
@@ -64,6 +79,11 @@ struct PipPose: Equatable {
     var stretch: CGFloat = 0
     var yawn: CGFloat = 0
     var droop: CGFloat = 0
+    var gazeX: CGFloat = 0
+    var gazeY: CGFloat = 0
+    var emerge: CGFloat = 0
+    var bounce: CGFloat = 0
+    var perk: CGFloat = 0
     var mood: Mood = .idle
 
     var springKey: SpringKey {
