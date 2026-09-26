@@ -34,6 +34,15 @@ func describe(_ label: String, _ geometry: ScreenGeometry) -> String {
     }
 }
 
+func presentationDescription(_ geometry: ScreenGeometry) -> String {
+    switch geometry.presentation {
+    case .notch(let rect):
+        return "notch rect=\(format(rect))"
+    case .floatingPill(let rect):
+        return "floatingPill rect=\(format(rect))"
+    }
+}
+
 let attached = NSScreen.screens.map(makeGeometry)
 if attached.isEmpty {
     print("attached screens: none")
@@ -61,6 +70,15 @@ let syntheticPlain = ScreenGeometry(
 )
 print(describe("synthetic-non-notched", syntheticPlain))
 
-if let selected = DisplaySelection.preferred(from: attached + [syntheticNotched, syntheticPlain]) {
-    print("display selection: displayID=\(selected.displayID) hasNotch=\(selected.hasNotch)")
+// Mirrors the running app: selection is made from the real attached screens,
+// so a non-notched-only machine reports a floating pill.
+if let selected = DisplaySelection.preferred(from: attached) {
+    print("display selection: displayID=\(selected.displayID) hasNotch=\(selected.hasNotch) presentation=\(presentationDescription(selected))")
+} else {
+    print("display selection: no attached screens")
+}
+
+// Demonstrates the same rule on the synthetic pair: the notched screen wins.
+if let synthetic = DisplaySelection.preferred(from: [syntheticPlain, syntheticNotched]) {
+    print("synthetic selection: displayID=\(synthetic.displayID) hasNotch=\(synthetic.hasNotch) presentation=\(presentationDescription(synthetic))")
 }

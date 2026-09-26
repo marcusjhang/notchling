@@ -2,13 +2,32 @@ import AppKit
 import SwiftUI
 import NotchlingCore
 
+/// Owns one Pip panel for one screen. The window frame never changes; only the
+/// animator's pose animates inside it. `close()` tears the panel down so a
+/// rebuild after a display change can never leave a stale panel behind.
 @MainActor
 final class PanelController {
     private let panel: NSPanel
+    private let animator: PipAnimator
 
-    init(screen: NSScreen) {
+    init(
+        screen: NSScreen,
+        settings: PipSettings,
+        screenState: ScreenState,
+        source: (any PipInputSource)?,
+        systemSource: (any SystemStateSource)?
+    ) {
         let geometry = ScreenGeometry(screen: screen)
         let stage = Self.stageFrame(for: screen)
+        let figure = PipPlacement.figureRect(for: geometry)
+
+        animator = PipAnimator(
+            settings: settings,
+            figure: figure,
+            screenState: screenState,
+            source: source,
+            systemSource: systemSource
+        )
 
         panel = NotchlingPanel(
             contentRect: stage,
@@ -25,14 +44,28 @@ final class PanelController {
         panel.isMovable = false
         panel.isReleasedWhenClosed = false
         panel.ignoresMouseEvents = true
-        let figure = PipPlacement.figureRect(for: geometry)
         panel.contentView = NSHostingView(
-            rootView: PipView(target: Self.viewRect(for: figure, in: stage), figure: figure)
+            rootView: PipView(target: Self.viewRect(for: figure, in: stage), animator: animator)
         )
     }
 
     func show() {
         panel.orderFrontRegardless()
+    }
+
+    func update(settings: PipSettings) {
+        animator.update(settings: settings)
+    }
+
+    func setScreenState(_ state: ScreenState) {
+        animator.setScreenState(state)
+    }
+
+    func close() {
+        animator.stop()
+        panel.orderOut(nil)
+        panel.contentView = nil
+        panel.close()
     }
 
     private static func stageFrame(for screen: NSScreen) -> CGRect {
