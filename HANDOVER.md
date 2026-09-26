@@ -14,11 +14,29 @@ building, what's already done, and the exact next commands.
 | Product design spec | ✅ committed — `docs/superpowers/specs/2026-09-26-notchling-pip-design.md` |
 | PSF factory | ✅ scaffolded, tuned, `psf validate` green |
 | Project contract | ✅ `AGENTS.md` (hard rules + required package layout) |
-| Deterministic gate | ✅ `scripts/check.sh` (wired as `gates.verify_command`) |
-| Code | ❌ **nothing written yet — no `Package.swift`, no `Sources/`** |
-| Work items run | **none.** `psf status` → "no work items" |
+| Deterministic gate | ✅ `scripts/check.sh` — **green on `main` @ `d8acc0e`, 57 tests** |
+| Code | ✅ **M0–M6 implemented.** `Package.swift`, `Sources/NotchlingCore` (pure), `Sources/Notchling` (app), `Sources/NotchlingProbe`, `Tests/NotchlingCoreTests` |
+| Packaged app | ✅ `bash scripts/package.sh` → `dist/Notchling.app` (LSUIElement, ad-hoc signed) |
 
-**You are starting at G1 below.**
+**RESUME HERE (2026-09-26).** All six milestones are merged to `main` and the
+deterministic gate passes. What remains is **manual, human verification of the
+M5+M6 acceptance**, which the automated verifier cannot judge (no GUI, no real
+CPU measurement):
+
+1. Run it: `swift run Notchling` or `bash scripts/package.sh && open dist/Notchling.app`.
+2. Confirm: one menu-bar creature icon, no Dock icon, no window; menu has
+   personality (exactly one checked), Mute, Launch at Login, Quit; Quit removes the
+   item; settings survive relaunch; Mute stops all motion; idle CPU < ~1%; napping
+   and display-sleep pause animation.
+3. Art direction is still an **open decision** (see §8). By owner request Pip was
+   shrunk from 56pt to **34pt** (`Sources/NotchlingCore/PipPlacement.swift`,
+   `figureHeight`) after the first local look.
+
+Factory state: `psf status` — **W-14179d13 (M5+M6) is `VERIFY` (attempt 3/3)** and
+its work was merged to `main` from branch `psf/W-14179d13` (pushed as
+`origin/psf/W-14179d13`) because review kept looping on the manual acceptance
+criteria. After your manual pass, record it:
+`psf outcome W-14179d13 --accepted`.
 
 ---
 
@@ -70,7 +88,9 @@ Lifecycle: `INTAKE → TRIAGE → SPEC → SPEC_REVIEW → READY → BUILD → V
 
 ## 5. Milestones & copy-paste goals
 
-Run them **in order**; each builds on the merged result of the last.
+**All done and merged to `main` (G1–G6).** Kept below for reference only — do not
+re-run them unless you are intentionally rebuilding a milestone. Run them **in
+order**; each builds on the merged result of the last.
 
 ### G1 — M0: skeleton, panel, geometry, probe, tests
 ```
