@@ -1,0 +1,19 @@
+# Factory local runtime (never committed)
+.psf/
+
+# Swift / SwiftPM
+.build/
+.swiftpm/
+*.xcodeproj
+*.xcworkspace
+
+# Packaged app output
+build/
+dist/
+
+# macOS
+.DS_Store
+
+# Editors
+.idea/
+.vscode/

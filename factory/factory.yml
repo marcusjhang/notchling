@@ -1,0 +1,47 @@
+schemaVersion: psf/v1
+name: notchling
+description: Software factory for Notchling, a macOS notch companion app.
+runner: subprocess
+mode: hitl
+agents:
+  triage:
+    prompt: agents/triage.md
+  spec:
+    prompt: agents/spec.md
+  implement:
+    prompt: agents/implement.md
+  verify:
+    prompt: agents/verify.md
+  review:
+    prompt: agents/review.md
+gates:
+  spec_approval: true
+  verify_quorum: 2
+  verify_command: "bash scripts/check.sh"
+limits:
+  max_attempts: 3
+  max_minutes: 30
+feedback:
+  upstream: marcusjhang/personal-software-factory
+  mode: 'off'
+classifier:
+  provider: mock
+  supervisor:
+    enabled: false
+    thresholds:
+      needs_human: 0.8
+      off_track: 0.8
+      stuck: 0.8
+      progress: 0.4
+    max_steers: 1
+    max_retries: 1
+runnerOptions:
+  command:
+  - /Users/marcusjhang/.local/share/uv/tools/personal-software-factory/bin/python
+  - -m
+  - psf.adapters.opencode
+  - --model
+  - deepseek/deepseek-flash
+  - --permissions
+  - workspace
+  permissions: workspace
