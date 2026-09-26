@@ -1,35 +1,41 @@
 import SwiftUI
 
 /// Pip, drawn entirely from vector custom Shapes and anchored at `target`
-/// (the figure rectangle computed by `NotchlingCore`). Static in M1; `squash`
-/// feeds the body's squash/stretch `animatableData`.
+/// (the figure rectangle computed by `NotchlingCore`). A single `TimelineView`
+/// ticks the `PipModel`, which steps the `BehaviorEngine` and returns a pose;
+/// one shared spring smooths the discrete behavior targets.
 struct PipView: View {
     let target: CGRect
-    var squash: CGFloat = 0
+    @State private var model = PipModel()
 
     var body: some View {
         GeometryReader { _ in
-            PipFigure(squash: squash)
-                .frame(width: target.width, height: target.height)
-                .position(x: target.midX, y: target.midY)
+            TimelineView(.animation) { _ in
+                let pose = model.tick()
+                PipFigure(pose: pose)
+                    .frame(width: target.width, height: target.height)
+                    .position(x: target.midX, y: target.midY)
+                    .animation(PipModel.sharedSpring, value: pose.springKey)
+            }
         }
     }
 }
 
 struct PipFigure: View {
-    var squash: CGFloat = 0
+    var pose = PipPose()
 
     var body: some View {
         GeometryReader { proxy in
             let layout = PipLayout(rect: CGRect(origin: .zero, size: proxy.size))
             let line = max(1.2, proxy.size.height * 0.035)
+            let squash = pose.squash - pose.stretch * 0.5
 
             ZStack {
                 part(PipBodyShape(squash: squash), frame: layout.body, line: line)
                 part(PipBellyShape(), frame: layout.belly, fill: PipPalette.belly)
 
-                ear(layout.leftEar, inner: layout.innerEar(from: layout.leftEar), rotation: -22, line: line)
-                ear(layout.rightEar, inner: layout.innerEar(from: layout.rightEar), rotation: 22, line: line)
+                ear(layout.leftEar, inner: layout.innerEar(from: layout.leftEar), rotation: -22 + earSwing, line: line)
+                ear(layout.rightEar, inner: layout.innerEar(from: layout.rightEar), rotation: 22 - earSwing, line: line)
 
                 part(PipArmShape(), frame: layout.leftArm, line: line)
                 part(PipArmShape(), frame: layout.rightArm, line: line)
@@ -40,10 +46,15 @@ struct PipFigure: View {
                 eye(layout.leftEye)
                 eye(layout.rightEye)
             }
+            .rotationEffect(.degrees(pose.lean * 4), anchor: .bottom)
             .compositingGroup()
             .shadow(color: .black.opacity(0.22), radius: line, y: line)
         }
-        .contentShape(PipSilhouetteShape(squash: squash))
+        .contentShape(PipSilhouetteShape(squash: pose.squash - pose.stretch * 0.5))
+    }
+
+    private var earSwing: Double {
+        Double(pose.earTwitch) * 9 + Double(pose.droop) * 16
     }
 
     @ViewBuilder
@@ -77,15 +88,24 @@ struct PipFigure: View {
     }
 
     private func eye(_ frame: CGRect) -> some View {
-        let light = PipLayout(rect: frame).catchlight(in: frame)
+        let closed = min(1, pose.blink + pose.droop * 0.45 + pose.yawn * 0.5)
+        let height = frame.height * (1 - 0.92 * closed)
+        let eyeRect = CGRect(
+            x: frame.minX,
+            y: frame.midY - height / 2,
+            width: frame.width,
+            height: max(0.5, height)
+        )
+        let light = PipLayout(rect: eyeRect).catchlight(in: eyeRect)
+        let dx = (pose.look - 0.5) * 2 * frame.width * 0.18 + pose.droop * frame.width * 0.06
         return ZStack(alignment: .topLeading) {
             PipEyeShape().fill(PipPalette.eye)
             PipCatchlightShape()
                 .fill(PipPalette.catchlight)
                 .frame(width: light.width, height: light.height)
-                .offset(x: light.minX - frame.minX, y: light.minY - frame.minY)
+                .offset(x: light.minX - eyeRect.minX, y: light.minY - eyeRect.minY)
         }
-        .frame(width: frame.width, height: frame.height)
-        .position(x: frame.midX, y: frame.midY)
+        .frame(width: eyeRect.width, height: eyeRect.height)
+        .position(x: frame.midX + dx, y: frame.midY)
     }
 }
