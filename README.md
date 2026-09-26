@@ -7,6 +7,9 @@ blinks, looks around, naps while you work, and quietly reacts to your music, you
 charging cable, and the time of day. He does nothing useful. He makes your Mac feel
 a little more alive.
 
+> **Starting work here?** Read [`HANDOVER.md`](HANDOVER.md) — current state and the
+> exact next commands.
+>
 > Design and product plan:
 > [`docs/superpowers/specs/2026-09-26-notchling-pip-design.md`](docs/superpowers/specs/2026-09-26-notchling-pip-design.md)
 
