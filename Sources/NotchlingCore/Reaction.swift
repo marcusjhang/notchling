@@ -53,17 +53,55 @@ public struct Gaze: Equatable, Sendable {
 }
 
 /// The reactive interrupts that outrank mood and micro-behavior. Higher priority
-/// wins when several are present at once.
+/// wins when several are present at once. Pointer reactions outrank the ambient
+/// system reactions, and charging outranks music.
 public enum Reaction: String, CaseIterable, Equatable, Sendable {
     case cursorNear
     case hover
     case click
+    case charging
+    case music
 
     public var priority: Int {
         switch self {
-        case .click: return 3
-        case .hover: return 2
-        case .cursorNear: return 1
+        case .click: return 5
+        case .hover: return 4
+        case .cursorNear: return 3
+        case .charging: return 2
+        case .music: return 1
+        }
+    }
+
+    public var isPointer: Bool {
+        switch self {
+        case .cursorNear, .hover, .click: return true
+        case .charging, .music: return false
+        }
+    }
+
+    public var isSystem: Bool { !isPointer }
+
+    /// The single system reaction state currently warrants, if any. Charging
+    /// subsumes music so exactly one system reaction is ever reported.
+    public static func system(from state: SystemState) -> Reaction? {
+        if state.isCharging { return .charging }
+        if state.audioOutputRunning { return .music }
+        return nil
+    }
+
+    /// Pick exactly one reaction when a pointer and a system reaction are both
+    /// present. Ties are impossible because every case has a distinct priority,
+    /// so the choice is fully deterministic.
+    public static func arbitrate(pointer: Reaction?, system: Reaction?) -> Reaction? {
+        switch (pointer, system) {
+        case let (pointer?, system?):
+            return pointer.priority >= system.priority ? pointer : system
+        case let (pointer?, nil):
+            return pointer
+        case let (nil, system?):
+            return system
+        case (nil, nil):
+            return nil
         }
     }
 }

@@ -16,11 +16,13 @@ final class PipModel {
 
     init(figure: Rect) {
         let tracker = CursorTracker()
+        let system = SystemStateMonitor()
         engine = ReactionEngine(
             seed: 0x4E4F_5443,
             personality: .companion,
             figure: figure,
             source: tracker,
+            systemSource: system,
             clock: SystemClock()
         )
     }
@@ -31,7 +33,8 @@ final class PipModel {
 
         var pose = PipPose()
         pose.mood = emission.mood
-        pose.squash = CGFloat(sin(time * 2 * .pi / Self.breathingPeriod)) * 0.06
+        let breathingPeriod = Self.breathingPeriod * (emission.isCharging ? 1.8 : 1)
+        pose.squash = CGFloat(sin(time * 2 * .pi / breathingPeriod)) * 0.06
 
         switch emission.mood {
         case .idle, .wake: pose.droop = 0
@@ -44,6 +47,12 @@ final class PipModel {
         pose.emerge = CGFloat(emission.emerge)
         pose.bounce = CGFloat(emission.bounce)
         pose.perk = emission.isNear ? 1 : 0
+
+        pose.musicSway = emission.isMusicPlaying ? CGFloat(sin(time * 2 * .pi / 1.8)) * 0.5 : 0
+        pose.warmGlow = emission.isCharging ? 1 : 0
+        pose.snuggle = emission.isCharging ? 1 : 0
+        pose.nightcap = emission.isNightcap ? 1 : 0
+        pose.perky = emission.isMorning ? 1 : 0
 
         if let micro = emission.microEvents.last {
             active = (micro.behavior, micro.time)
@@ -84,10 +93,23 @@ struct PipPose: Equatable {
     var emerge: CGFloat = 0
     var bounce: CGFloat = 0
     var perk: CGFloat = 0
+    var musicSway: CGFloat = 0
+    var warmGlow: CGFloat = 0
+    var snuggle: CGFloat = 0
+    var nightcap: CGFloat = 0
+    var perky: CGFloat = 0
     var mood: Mood = .idle
 
     var springKey: SpringKey {
-        SpringKey(droop: droop, blink: blink, look: look, earTwitch: earTwitch, lean: lean, stretch: stretch)
+        SpringKey(
+            droop: droop,
+            blink: blink,
+            look: look,
+            earTwitch: earTwitch,
+            lean: lean,
+            stretch: stretch,
+            snuggle: snuggle
+        )
     }
 
     struct SpringKey: Equatable {
@@ -97,5 +119,6 @@ struct PipPose: Equatable {
         var earTwitch: CGFloat
         var lean: CGFloat
         var stretch: CGFloat
+        var snuggle: CGFloat
     }
 }

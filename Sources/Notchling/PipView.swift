@@ -25,8 +25,12 @@ struct PipView: View {
                 let pose = model.tick()
                 PipFigure(pose: pose)
                     .frame(width: target.width, height: target.height)
-                    .rotationEffect(.degrees(Double(pose.gazeX) * 3), anchor: .top)
-                    .offset(y: pose.emerge + pose.perk * 2)
+                    .rotationEffect(
+                        .degrees(Double(pose.gazeX) * 3 + Double(pose.musicSway) * 4),
+                        anchor: .top
+                    )
+                    .offset(y: pose.emerge + pose.perk * 2 - pose.perky * 1.5 + pose.snuggle * 3)
+                    .scaleEffect(1 - pose.snuggle * 0.05, anchor: .bottom)
                     .position(x: target.midX, y: target.midY)
                     .animation(PipModel.sharedSpring, value: pose.springKey)
             }
@@ -44,6 +48,14 @@ struct PipFigure: View {
             let squash = pose.squash - pose.stretch * 0.5 + pose.bounce
 
             ZStack {
+                if pose.warmGlow > 0 {
+                    PipHeadShape()
+                        .fill(PipPalette.warmGlow.opacity(0.4 * pose.warmGlow))
+                        .frame(width: layout.body.width * 1.6, height: layout.body.height * 1.5)
+                        .position(x: layout.body.midX, y: layout.body.midY)
+                        .blur(radius: line * 4)
+                }
+
                 part(PipBodyShape(squash: squash), frame: layout.body, line: line)
                 part(PipBellyShape(), frame: layout.belly, fill: PipPalette.belly)
 
@@ -55,6 +67,17 @@ struct PipFigure: View {
 
                 part(PipHeadShape(), frame: layout.head, line: line)
                 part(PipTuftShape(), frame: layout.tuft, line: line)
+
+                if pose.nightcap > 0 {
+                    PipNightcapShape()
+                        .fill(PipPalette.nightcap)
+                        .overlay(PipNightcapShape().stroke(PipPalette.outline, lineWidth: line * 0.8))
+                        .frame(width: layout.head.width * 0.95, height: layout.head.height * 0.7)
+                        .position(
+                            x: layout.head.midX,
+                            y: layout.head.minY + layout.head.height * 0.12
+                        )
+                }
 
                 eye(layout.leftEye)
                 eye(layout.rightEye)
