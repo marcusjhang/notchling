@@ -1,0 +1,81 @@
+import SwiftUI
+import NotchlingCore
+
+/// Drives the creature from the behavior engine. One shared spring smooths the
+/// discrete behavior targets; breathing is a continuous baseline that runs in
+/// every mood.
+final class PipModel {
+    static let sharedSpring = Animation.spring(response: 0.45, dampingFraction: 0.72)
+    static let breathingPeriod: Double = 2.5
+    static let behaviorDuration: TimeInterval = 0.7
+
+    private var engine: BehaviorEngine
+    private var active: (behavior: Behavior, time: TimeInterval)?
+
+    init(personality: Personality = .companion) {
+        engine = BehaviorEngine(seed: 0x4E4F_5443, personality: personality, clock: SystemClock())
+    }
+
+    func tick() -> PipPose {
+        let emission = engine.step()
+        let time = emission.time
+
+        var pose = PipPose()
+        pose.mood = emission.mood
+        pose.squash = CGFloat(sin(time * 2 * .pi / Self.breathingPeriod)) * 0.06
+
+        switch emission.mood {
+        case .idle, .wake: pose.droop = 0
+        case .doze: pose.droop = 0.55
+        case .nap: pose.droop = 1
+        }
+
+        if let micro = emission.microEvents.last {
+            active = (micro.behavior, micro.time)
+        }
+        if let active, time - active.time < Self.behaviorDuration {
+            let progress = max(0, min(1, (time - active.time) / Self.behaviorDuration))
+            apply(active.behavior, CGFloat(sin(progress * .pi)), to: &pose)
+        }
+
+        return pose
+    }
+
+    private func apply(_ behavior: Behavior, _ envelope: CGFloat, to pose: inout PipPose) {
+        switch behavior {
+        case .breathe: break
+        case .blink: pose.blink = envelope
+        case .lookAround: pose.look = envelope
+        case .earTwitch: pose.earTwitch = envelope
+        case .weightShift: pose.lean = envelope
+        case .stretch: pose.stretch = envelope
+        case .yawn: pose.yawn = envelope
+        }
+    }
+}
+
+/// A single frame's worth of animation values for Pip.
+struct PipPose: Equatable {
+    var squash: CGFloat = 0
+    var blink: CGFloat = 0
+    var look: CGFloat = 0
+    var earTwitch: CGFloat = 0
+    var lean: CGFloat = 0
+    var stretch: CGFloat = 0
+    var yawn: CGFloat = 0
+    var droop: CGFloat = 0
+    var mood: Mood = .idle
+
+    var springKey: SpringKey {
+        SpringKey(droop: droop, blink: blink, look: look, earTwitch: earTwitch, lean: lean, stretch: stretch)
+    }
+
+    struct SpringKey: Equatable {
+        var droop: CGFloat
+        var blink: CGFloat
+        var look: CGFloat
+        var earTwitch: CGFloat
+        var lean: CGFloat
+        var stretch: CGFloat
+    }
+}
