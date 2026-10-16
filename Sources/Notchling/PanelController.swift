@@ -18,7 +18,13 @@ final class PanelController {
         systemSource: (any SystemStateSource)?
     ) {
         let geometry = ScreenGeometry(screen: screen)
-        let stage = Self.stageFrame(for: screen)
+        let envelope = PipPlacement.panelEnvelope(for: geometry)
+        let stage = CGRect(
+            x: envelope.minX,
+            y: envelope.minY,
+            width: envelope.width,
+            height: envelope.height
+        )
         let figure = PipPlacement.figureRect(for: geometry)
 
         animator = PipAnimator(
@@ -66,12 +72,6 @@ final class PanelController {
         panel.orderOut(nil)
         panel.contentView = nil
         panel.close()
-    }
-
-    private static func stageFrame(for screen: NSScreen) -> CGRect {
-        let frame = screen.frame
-        let height = frame.height / 2
-        return CGRect(x: frame.minX, y: frame.maxY - height, width: frame.width, height: height)
     }
 
     private static func viewRect(for rect: Rect, in stage: CGRect) -> CGRect {
