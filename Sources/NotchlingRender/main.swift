@@ -1,9 +1,11 @@
 import Foundation
+import CoreGraphics
 import NotchlingCore
 import NotchlingUI
 
-// Headless preview renderer. Walks Pip's poses and writes one PNG each into the
-// target directory (default: preview/). Run as scripts/render-preview.sh.
+// Headless preview renderer. Walks Pip's poses and writes one PNG each at 1x and
+// 2x into the target directory (default: preview/). Run as
+// scripts/render-preview.sh.
 
 @MainActor
 func renderAll(into directory: URL) {
@@ -15,17 +17,20 @@ func renderAll(into directory: URL) {
     }
 
     for entry in PipPose.previewPoses {
-        guard let data = PipPreview.pngData(for: entry.pose) else {
-            FileHandle.standardError.write(Data("failed to render \(entry.name)\n".utf8))
-            exit(1)
-        }
-        let url = directory.appendingPathComponent("\(entry.name).png")
-        do {
-            try data.write(to: url)
-            print(url.path)
-        } catch {
-            FileHandle.standardError.write(Data("failed to write \(entry.name): \(error)\n".utf8))
-            exit(1)
+        for scale: CGFloat in [1, 2] {
+            guard let data = PipPreview.pngData(for: entry.pose, scale: scale) else {
+                FileHandle.standardError.write(Data("failed to render \(entry.name)@\(Int(scale))x\n".utf8))
+                exit(1)
+            }
+            let name = "\(entry.name)@\(Int(scale))x"
+            let url = directory.appendingPathComponent("\(name).png")
+            do {
+                try data.write(to: url)
+                print(url.path)
+            } catch {
+                FileHandle.standardError.write(Data("failed to write \(name): \(error)\n".utf8))
+                exit(1)
+            }
         }
     }
 }
