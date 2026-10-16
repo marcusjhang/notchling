@@ -1,10 +1,11 @@
 import SwiftUI
 import NotchlingCore
+import NotchlingUI
 
-/// Pip, drawn entirely from vector custom Shapes and anchored at `target`
-/// (the figure rectangle in view coordinates). `PipAnimator` owns the engine
-/// clock and pauses it while muted, napping, or the display is asleep; one
-/// shared spring smooths the discrete behavior targets.
+/// Pip, anchored at `target` (the figure rectangle in view coordinates).
+/// `PipAnimator` owns the engine clock and pauses it while muted, napping, or
+/// the display is asleep; one shared spring smooths the discrete behavior
+/// targets. All drawing and placement live in `NotchlingUI`/`NotchlingCore`.
 @MainActor
 struct PipView: View {
     let target: CGRect
@@ -22,116 +23,5 @@ struct PipView: View {
             .scaleEffect(1 - pose.snuggle * 0.05, anchor: .bottom)
             .position(x: target.midX, y: target.midY)
             .animation(PipModel.sharedSpring, value: pose.springKey)
-    }
-}
-
-struct PipFigure: View {
-    var pose = PipPose()
-
-    var body: some View {
-        GeometryReader { proxy in
-            let layout = PipLayout(rect: CGRect(origin: .zero, size: proxy.size))
-            let line = max(1.2, proxy.size.height * 0.035)
-            let squash = pose.squash - pose.stretch * 0.5 + pose.bounce
-
-            ZStack {
-                if pose.warmGlow > 0 {
-                    PipHeadShape()
-                        .fill(PipPalette.warmGlow.opacity(0.4 * pose.warmGlow))
-                        .frame(width: layout.body.width * 1.6, height: layout.body.height * 1.5)
-                        .position(x: layout.body.midX, y: layout.body.midY)
-                        .blur(radius: line * 4)
-                }
-
-                part(PipBodyShape(squash: squash), frame: layout.body, line: line)
-                part(PipBellyShape(), frame: layout.belly, fill: PipPalette.belly)
-
-                ear(layout.leftEar, inner: layout.innerEar(from: layout.leftEar), rotation: -22 + earSwing, line: line)
-                ear(layout.rightEar, inner: layout.innerEar(from: layout.rightEar), rotation: 22 - earSwing, line: line)
-
-                part(PipArmShape(), frame: layout.leftArm, line: line)
-                part(PipArmShape(), frame: layout.rightArm, line: line)
-
-                part(PipHeadShape(), frame: layout.head, line: line)
-                part(PipTuftShape(), frame: layout.tuft, line: line)
-
-                if pose.nightcap > 0 {
-                    PipNightcapShape()
-                        .fill(PipPalette.nightcap)
-                        .overlay(PipNightcapShape().stroke(PipPalette.outline, lineWidth: line * 0.8))
-                        .frame(width: layout.head.width * 0.95, height: layout.head.height * 0.7)
-                        .position(
-                            x: layout.head.midX,
-                            y: layout.head.minY + layout.head.height * 0.12
-                        )
-                }
-
-                eye(layout.leftEye)
-                eye(layout.rightEye)
-            }
-            .rotationEffect(.degrees(pose.lean * 4), anchor: .bottom)
-            .compositingGroup()
-            .shadow(color: .black.opacity(0.22), radius: line, y: line)
-        }
-        .contentShape(PipSilhouetteShape(squash: pose.squash - pose.stretch * 0.5 + pose.bounce))
-    }
-
-    private var earSwing: Double {
-        Double(pose.earTwitch) * 9 + Double(pose.droop) * 16 - Double(pose.perk) * 6
-    }
-
-    @ViewBuilder
-    private func part(_ shape: some Shape, frame: CGRect, fill: Color = PipPalette.body, line: CGFloat? = nil) -> some View {
-        if let line {
-            shape
-                .fill(fill)
-                .overlay(shape.stroke(PipPalette.outline, lineWidth: line))
-                .frame(width: frame.width, height: frame.height)
-                .position(x: frame.midX, y: frame.midY)
-        } else {
-            shape
-                .fill(fill)
-                .frame(width: frame.width, height: frame.height)
-                .position(x: frame.midX, y: frame.midY)
-        }
-    }
-
-    private func ear(_ frame: CGRect, inner: CGRect, rotation: Double, line: CGFloat) -> some View {
-        ZStack {
-            PipEarShape().fill(PipPalette.body)
-            PipEarShape()
-                .fill(PipPalette.innerEar)
-                .frame(width: inner.width, height: inner.height)
-                .position(x: inner.midX - frame.minX, y: inner.midY - frame.minY)
-            PipEarShape().stroke(PipPalette.outline, lineWidth: line)
-        }
-        .frame(width: frame.width, height: frame.height)
-        .rotationEffect(.degrees(rotation), anchor: .bottom)
-        .position(x: frame.midX, y: frame.midY)
-    }
-
-    private func eye(_ frame: CGRect) -> some View {
-        let closed = min(1, pose.blink + pose.droop * 0.45 + pose.yawn * 0.5)
-        let height = frame.height * (1 - 0.92 * closed)
-        let eyeRect = CGRect(
-            x: frame.minX,
-            y: frame.midY - height / 2,
-            width: frame.width,
-            height: max(0.5, height)
-        )
-        let light = PipLayout(rect: eyeRect).catchlight(in: eyeRect)
-        let dx = (pose.look - 0.5) * 2 * frame.width * 0.18
-            + pose.droop * frame.width * 0.06
-            + pose.gazeX * frame.width * 0.30
-        let dy = -pose.gazeY * frame.height * 0.26
-        return ZStack(alignment: .topLeading) {
-            PipEyeShape().fill(PipPalette.eye)
-            PipCatchlightShape()
-                .fill(PipPalette.catchlight)
-                .frame(width: light.width, height: light.height)
-                .offset(x: light.minX - eyeRect.minX, y: light.minY - eyeRect.minY)
-        }
-        .frame(width: eyeRect.width, height: eyeRect.height)
-        .position(x: frame.midX + dx, y: frame.midY + dy)
     }
 }

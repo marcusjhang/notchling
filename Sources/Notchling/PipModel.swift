@@ -1,5 +1,6 @@
 import SwiftUI
 import NotchlingCore
+import NotchlingUI
 
 /// Drives the creature from the reactive behavior engine. One shared spring
 /// smooths the discrete behavior targets; breathing is a continuous baseline
@@ -14,6 +15,10 @@ final class PipModel {
     private var engine: ReactionEngine
     private var active: (behavior: Behavior, time: TimeInterval)?
     private var lastGaze: Gaze = .zero
+    private let recoilSpring = Spring.pip
+    private let recoilSettleTime = Spring.settleTime(response: 0.45, dampingFraction: 0.5)
+    private var lastReaction: Reaction?
+    private var reactionChangedAt: TimeInterval?
 
     /// True while something is worth animating at the fast cadence: a live
     /// reaction, a micro-behavior mid-flight, cursor movement, or hover-emerge.
@@ -77,6 +82,20 @@ final class PipModel {
         pose.nightcap = emission.isNightcap ? 1 : 0
         pose.perky = emission.isMorning ? 1 : 0
 
+        pose.happy = emission.expression == .happy ? 1 : 0
+        if emission.reaction != lastReaction {
+            lastReaction = emission.reaction
+            reactionChangedAt = time
+        }
+        if let changed = reactionChangedAt {
+            let elapsed = time - changed
+            if elapsed < recoilSettleTime {
+                pose.recoil = CGFloat(recoilSpring.value(elapsed: elapsed, from: -0.12, to: 0))
+            } else {
+                reactionChangedAt = nil
+            }
+        }
+
         if !emission.mood.isAsleep, let micro = emission.microEvents.last {
             active = (micro.behavior, micro.time)
         }
@@ -105,57 +124,5 @@ final class PipModel {
         case .stretch: pose.stretch = envelope
         case .yawn: pose.yawn = envelope
         }
-    }
-}
-
-/// A single frame's worth of animation values for Pip.
-struct PipPose: Equatable {
-    /// A neutral, non-animated pose used while mute or display sleep has paused
-    /// drawing.
-    static let resting = PipPose()
-    /// A still, fully-drooped pose drawn while Pip naps. The engine keeps
-    /// polling at a slow cadence, but nothing visibly moves.
-    static let napping = PipPose(droop: 1)
-
-    var squash: CGFloat = 0
-    var blink: CGFloat = 0
-    var look: CGFloat = 0
-    var earTwitch: CGFloat = 0
-    var lean: CGFloat = 0
-    var stretch: CGFloat = 0
-    var yawn: CGFloat = 0
-    var droop: CGFloat = 0
-    var gazeX: CGFloat = 0
-    var gazeY: CGFloat = 0
-    var emerge: CGFloat = 0
-    var bounce: CGFloat = 0
-    var perk: CGFloat = 0
-    var musicSway: CGFloat = 0
-    var warmGlow: CGFloat = 0
-    var snuggle: CGFloat = 0
-    var nightcap: CGFloat = 0
-    var perky: CGFloat = 0
-    var mood: Mood = .idle
-
-    var springKey: SpringKey {
-        SpringKey(
-            droop: droop,
-            blink: blink,
-            look: look,
-            earTwitch: earTwitch,
-            lean: lean,
-            stretch: stretch,
-            snuggle: snuggle
-        )
-    }
-
-    struct SpringKey: Equatable {
-        var droop: CGFloat
-        var blink: CGFloat
-        var look: CGFloat
-        var earTwitch: CGFloat
-        var lean: CGFloat
-        var stretch: CGFloat
-        var snuggle: CGFloat
     }
 }
