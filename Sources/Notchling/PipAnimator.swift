@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import NotchlingCore
+import NotchlingUI
 
 /// Drives Pip's animation clock and decides when to run it at all. The timer is
 /// event-gated: it is stopped entirely while muted or while the display is

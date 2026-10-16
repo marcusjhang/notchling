@@ -8,13 +8,21 @@ let package = Package(
     ],
     targets: [
         .target(name: "NotchlingCore"),
+        .target(
+            name: "NotchlingUI",
+            dependencies: ["NotchlingCore"]
+        ),
         .executableTarget(
             name: "Notchling",
-            dependencies: ["NotchlingCore"]
+            dependencies: ["NotchlingCore", "NotchlingUI"]
         ),
         .executableTarget(
             name: "NotchlingProbe",
             dependencies: ["NotchlingCore"]
+        ),
+        .executableTarget(
+            name: "NotchlingRender",
+            dependencies: ["NotchlingCore", "NotchlingUI"]
         ),
         .testTarget(
             name: "NotchlingCoreTests",
