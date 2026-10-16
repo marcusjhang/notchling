@@ -66,7 +66,8 @@ notch. Read the full design before changing anything:
    Recording, Camera, or Apple Events. Cursor tracking uses a global
    `NSEvent` `.mouseMoved` monitor, which needs no permission.
 4. **Never animate or resize the NSWindow frame to morph the UI.** Use one fixed,
-   oversized, transparent panel and animate SwiftUI content inside it.
+   transparent panel sized to the content's maximum animation envelope (never
+   resized to morph the UI) and animate content inside it.
 5. **The panel never takes focus or input from other apps:** `canBecomeKey =
    false`, `canBecomeMain = false`, `isMovable = false`, ordered with
    `orderFrontRegardless()`.
